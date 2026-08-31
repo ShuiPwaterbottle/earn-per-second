@@ -480,9 +480,9 @@ static void createControls(HWND hwnd) {
     mk(hwnd, L"BUTTON", "下班结算", BS_PUSHBUTTON | WS_TABSTOP, P2_BTN_STOP, 190, 290, 110, 40, fontCtrl, PAGE_WORK);
     mk(hwnd, L"BUTTON", "返回设置", BS_PUSHBUTTON | WS_TABSTOP, P2_BTN_BACK, 320, 290, 110, 40, fontCtrl, PAGE_WORK);
 
-    mk(hwnd, L"STATIC", "EarnPerSecond v1.1.0 · MIT License · 开源项目",
+    mk(hwnd, L"STATIC", "EarnPerSecond v1.3.0 · MIT License · 开源项目",
        SS_CENTER, 0, 10, 580, 470, 18, fontSmall, PAGE_SETTINGS);
-    mk(hwnd, L"STATIC", "EarnPerSecond v1.1.0 · MIT License · 开源项目",
+    mk(hwnd, L"STATIC", "EarnPerSecond v1.3.0 · MIT License · 开源项目",
        SS_CENTER, 0, 10, 580, 470, 18, fontSmall, PAGE_WORK);
 }
 
@@ -507,10 +507,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         updateRatePreview();
         updateSettingsFooter();
         updateWorkUI();
-        showPage(PAGE_SETTINGS); // 强制整窗重绘，确保所有控件可见
-        // 显式失效所有子控件，杜绝部分环境下的控件空白
-        RedrawWindow(hwnd, nullptr, nullptr,
-                     RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_ERASE | RDW_FRAME | RDW_UPDATENOW);
+        showPage(PAGE_SETTINGS);
+        // 注意：不在 WM_CREATE 里强制 RedrawWindow —— 窗口尚未显示时
+        // 强制绘制子控件可能破坏其绘制状态；首次完整重绘交给
+        // wWinMain 中 ShowWindow 之后的 RedrawWindow(RDW_ALLCHILDREN)。
         return 0;
     }
     case WM_COMMAND: {
@@ -558,6 +558,22 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_TIMER:
         if (wp == TIMER_REFRESH && g_state == ST_WORKING) updateWorkUI();
         return 0;
+    // 显式处理控件颜色消息：普通窗口（非对话框）若不处理这些消息，
+    // 静态文字/编辑框文字颜色依赖系统默认行为，部分环境（主题/会话）下
+    // 会出现文字不可见（空白）的问题。这里强制黑色文字 + 正确背景。
+    case WM_CTLCOLORSTATIC:
+    case WM_CTLCOLORBTN: {
+        HDC hdc = (HDC)wp;
+        SetTextColor(hdc, RGB(0, 0, 0));
+        SetBkMode(hdc, TRANSPARENT);
+        return (LRESULT)GetSysColorBrush(COLOR_BTNFACE);
+    }
+    case WM_CTLCOLOREDIT: {
+        HDC hdc = (HDC)wp;
+        SetTextColor(hdc, RGB(0, 0, 0));
+        SetBkColor(hdc, RGB(255, 255, 255));
+        return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
+    }
     case WM_GETMINMAXINFO: {
         MINMAXINFO* mmi = (MINMAXINFO*)lp;
         mmi->ptMinTrackSize.x = 506;
