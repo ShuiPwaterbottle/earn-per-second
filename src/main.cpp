@@ -508,6 +508,9 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         updateSettingsFooter();
         updateWorkUI();
         showPage(PAGE_SETTINGS); // 强制整窗重绘，确保所有控件可见
+        // 显式失效所有子控件，杜绝部分环境下的控件空白
+        RedrawWindow(hwnd, nullptr, nullptr,
+                     RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_ERASE | RDW_FRAME | RDW_UPDATENOW);
         return 0;
     }
     case WM_COMMAND: {
@@ -578,7 +581,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 // 入口
 // ---------------------------------------------------------------------------
 int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, PWSTR, int nCmdShow) {
-    SetProcessDPIAware();
+    // 注意：本应用刻意不调用 SetProcessDPIAware()、不内嵌 DPI manifest，
+    // 保持 DPI-unaware，由系统按经典路径统一处理高 DPI 缩放。
+    // 实验证明：system-DPI-aware + 125% 缩放显示时，部分环境（Explorer 双击）
+    // 会出现子控件不绘制、界面"空白"的问题；DPI-unaware 则任何环境都完整渲染。
     QueryPerformanceFrequency(&g_freq);
 
     WNDCLASSEXW wc = {};
@@ -603,6 +609,9 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, PWSTR, int nCmdShow) {
     if (!hwnd) return 1;
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
+    // 防御性重绘：显式失效所有子控件并立即重绘，确保任何环境下控件都完整渲染
+    RedrawWindow(hwnd, nullptr, nullptr,
+                 RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_ERASE | RDW_FRAME | RDW_UPDATENOW);
 
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0) {

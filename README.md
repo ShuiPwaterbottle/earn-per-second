@@ -18,7 +18,8 @@
 其他特性：
 - **配置持久化**：工资设置与累计收入自动保存到 `salary.ini`（优先程序所在目录，其次 `%APPDATA%\EarnPerSecond`），下次启动自动恢复；
 - **自动结算**：工作中直接关窗会自动结算并保存；
-- 高 DPI 适配（内嵌 manifest），任何启动方式下界面一致。
+- **渲染健壮性**：父窗口带 `WS_CLIPCHILDREN` + 创建后全量重绘子控件，杜绝控件空白；
+- **刻意不启用 DPI 感知**（无 manifest、不调用 `SetProcessDPIAware`），由系统统一缩放，保证任何显示缩放下都完整渲染（实验发现 system-DPI-aware + 125% 缩放在部分环境会触发控件不绘制的 bug）。
 
 ## 🚀 使用方法
 
@@ -40,12 +41,9 @@ build.bat
 等价命令：
 
 ```bat
-windres -O coff src\app.rc -o build\app_res.o
 g++ -std=c++17 -O2 -municode -mwindows -static -static-libgcc -static-libstdc++ ^
-    src\main.cpp build\app_res.o -o build\EarnPerSecond.exe -luser32 -lgdi32 -lshell32
+    src\main.cpp -o build\EarnPerSecond.exe -luser32 -lgdi32 -lshell32
 ```
-
-> 注：`windres` 在沙箱受限环境下需要加 `--use-temp-file`（改用临时文件而非管道）。
 
 ### MSVC
 
@@ -64,9 +62,7 @@ build-msvc.bat
 ```
 earn-per-second/
 ├── src/
-│   ├── main.cpp          # 全部源码（单文件，Win32 GUI，两页式）
-│   ├── app.rc            # 资源脚本（嵌入 DPI manifest）
-│   └── app.manifest      # DPI manifest（system DPI aware）
+│   └── main.cpp          # 全部源码（单文件，Win32 GUI，两页式）
 ├── .github/workflows/
 │   └── build.yml         # GitHub Actions 自动构建 + Release
 ├── build.bat             # MinGW-w64 构建脚本
