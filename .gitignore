@@ -1,0 +1,17 @@
+# Build output
+build/
+dist/
+*.exe
+*.o
+*.obj
+*.pdb
+
+# Local runtime data
+salary.ini
+
+# IDE / OS
+.vscode/
+.idea/
+*.suo
+Thumbs.db
+Desktop.ini
