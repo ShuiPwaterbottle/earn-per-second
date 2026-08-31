@@ -6,17 +6,25 @@
 
 ## ✨ 功能
 
-- **三种工资模式**：月薪 / 日薪 / 时薪，配合每天工作小时数与每周工作天数，自动算出**每秒工资**；
-- **实时刷新**：点击「开始上班」后，每秒刷新已赚到的钱（基于高精度计时器，暂停时间不计入）；
-- **随时暂停 / 结算**：可暂停、可继续；「下班结算」自动汇总本次工作时长与收入，并计入累计收入；
+**两页式界面**：
+1. **设置页** —— 填写工资信息：
+   - 三种工资模式：月薪 / 日薪 / 时薪，配合每天工作小时数与每周工作天数，实时预览**每秒工资**与每小时等效值；
+   - 显示累计收入，可一键重置。
+2. **计时页** —— 点击「开始上班」后进入纯计时界面：
+   - 大字显示每秒刷新的已赚金额（高精度计时，精确到分）；
+   - 「暂停 / 继续」（暂停时间不计入）、「下班结算」弹出汇总（本次时长 + 收入 + 累计）；
+   - 「返回设置」可随时回到设置页（工作中返回 = 自动结算，不丢数据）。
+
+其他特性：
 - **配置持久化**：工资设置与累计收入自动保存到 `salary.ini`（优先程序所在目录，其次 `%APPDATA%\EarnPerSecond`），下次启动自动恢复；
-- **自动结算**：工作中直接关窗会自动结算并保存，不怕忘记点下班。
+- **自动结算**：工作中直接关窗会自动结算并保存；
+- 高 DPI 适配（内嵌 manifest），任何启动方式下界面一致。
 
 ## 🚀 使用方法
 
 1. 从 [Releases](../../releases) 下载 `EarnPerSecond.exe`（Windows x64）；
-2. 双击运行，填写工资设置并点击「保存设置」；
-3. 点击「开始上班」，然后……享受每一秒都在赚钱的感觉；
+2. 双击运行，在设置页填写工资并点击「保存设置」；
+3. 点击「开始上班」进入计时页，然后……享受每一秒都在赚钱的感觉；
 4. 随时「暂停」或「下班结算」。
 
 > 计算口径：月薪按每月 52/12 ≈ 4.33 个工作周折算；`每秒工资 = 月薪 ÷ (每天小时 × 每周天数 × 4.33 × 3600)`。
@@ -32,9 +40,12 @@ build.bat
 等价命令：
 
 ```bat
+windres -O coff src\app.rc -o build\app_res.o
 g++ -std=c++17 -O2 -municode -mwindows -static -static-libgcc -static-libstdc++ ^
-    src\main.cpp -o build\EarnPerSecond.exe -luser32 -lgdi32 -lshell32
+    src\main.cpp build\app_res.o -o build\EarnPerSecond.exe -luser32 -lgdi32 -lshell32
 ```
+
+> 注：`windres` 在沙箱受限环境下需要加 `--use-temp-file`（改用临时文件而非管道）。
 
 ### MSVC
 
@@ -53,7 +64,9 @@ build-msvc.bat
 ```
 earn-per-second/
 ├── src/
-│   └── main.cpp          # 全部源码（单文件，Win32 GUI）
+│   ├── main.cpp          # 全部源码（单文件，Win32 GUI，两页式）
+│   ├── app.rc            # 资源脚本（嵌入 DPI manifest）
+│   └── app.manifest      # DPI manifest（system DPI aware）
 ├── .github/workflows/
 │   └── build.yml         # GitHub Actions 自动构建 + Release
 ├── build.bat             # MinGW-w64 构建脚本

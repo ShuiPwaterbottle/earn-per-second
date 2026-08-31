@@ -23,8 +23,9 @@ jobs:
       - name: Build EarnPerSecond.exe
         shell: msys2 {0}
         run: |
+          windres -O coff src/app.rc -o app_res.o
           g++ -std=c++17 -O2 -municode -mwindows -static -static-libgcc -static-libstdc++ \
-              src/main.cpp -o EarnPerSecond.exe -luser32 -lgdi32 -lshell32
+              src/main.cpp app_res.o -o EarnPerSecond.exe -luser32 -lgdi32 -lshell32
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
